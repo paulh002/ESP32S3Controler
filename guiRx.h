@@ -19,6 +19,7 @@ private:
 	lv_obj_t* bg_rx, *smeterLabel;
 	SwrBarClass SmeterBar;
 	lv_style_t style_btn;
+	int encoder[2] {0,0};
 
 	void create_buttons(lv_obj_t* tab, lv_group_t* button_group);
 	

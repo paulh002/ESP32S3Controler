@@ -47,11 +47,11 @@ void guiRx::create_buttons(lv_obj_t* tab, lv_group_t* button_group)
 		case 0:
 			strcpy(str, "Volume");
 			command = String("VOL");
-			button_selected = i;
-			lv_obj_add_state(button[i], LV_STATE_CHECKED);
 			break;
 		case 1:
 			strcpy(str, "Gain");
+			button_selected = i;
+			lv_obj_add_state(button[i], LV_STATE_CHECKED); 
 			break;
 		case 2:
 			strcpy(str, "RF");
@@ -160,26 +160,48 @@ void button_event_handler(lv_event_t* e)
 void guiRx::checkButtons(RotaryEncoder &decoder)
 {
 	int count = 0;
-	if (guirx.button_selected != -1)
+
+	count = decoder.getPosition(0);
+	if (encoder[0] != count)
 	{
-		count = (int)decoder.getDirection(1);
-		if (count)
-			decoder.ClearEncoder(1);
+		if (count > encoder[0])
+		{
+			CatInterface.Setag(-1);
+		}
+		else
+		{
+			CatInterface.Setag(1);
+		}
+		encoder[0] = count ;
 	}
 
-	if (count)
+	count = decoder.getPosition(1);
+	if (encoder[1] != count)
 	{
-		switch (guirx.button_selected)
+		if (count > encoder[1])
 		{
-		case 0: // Volume
-			CatInterface.Setag(count);
-			break;
-		case 1: // IF Gain
-			CatInterface.Setig(count);
-			break;
-		case 2:// RF Gain
-			CatInterface.Setrg(count);
-			break;
+			switch (guirx.button_selected)
+			{
+			case 1: // IF Gain
+				CatInterface.Setig(-1);
+				break;
+			case 2:// RF Gain
+				CatInterface.Setrg(-1);
+				break;
+			}
 		}
+		else
+		{
+			switch (guirx.button_selected)
+			{
+			case 1: // IF Gain
+				CatInterface.Setig(1);
+				break;
+			case 2:// RF Gain
+				CatInterface.Setrg(1);
+				break;
+			}
+		}
+		encoder[1] = count;
 	}
 }

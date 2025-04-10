@@ -131,21 +131,6 @@ void my_touchpad_read(lv_indev_drv_t* indev_driver, lv_indev_data_t* data)
 	}
 }
 
-volatile lv_indev_state_t	enc_button_state = LV_INDEV_STATE_REL;
-
-void read_encoder(lv_indev_drv_t* indev, lv_indev_data_t* data)
-{
-	data->enc_diff = (int)decoder.getDirection(0);
-	if (data->enc_diff)
-		decoder.ClearEncoder(0);
-	data->state = enc_button_state;
-	if (data->enc_diff > 0)
-		data->enc_diff = 1;
-	if (data->enc_diff < 0)
-		data->enc_diff = -1;
-	return;
-}
-
 volatile int lastEncoding{}, lastEncoding1{}, lastCat{};
 int		total = 0;
 int	    tx = 0;
@@ -160,32 +145,15 @@ void guiDecoder(void* arg) {
 	}
 }
 
-void guiTask(void* arg) {
-	
+void guiTask(void* arg) {	
+	char str[80];
+
 	while (1) {
 		CatInterface.checkCAT();
-		if (flag)
-		{
-			if (decoder.IsButtonPressed(0))
-				enc_button_state = LV_INDEV_STATE_PR;
-			else
-				enc_button_state = LV_INDEV_STATE_REL;
-			/*
-			long mtime, mtime1;
-			mtime = mtime1 = millis();
-			while (mtime1 - mtime < 100)
-			{
-				decoder.tick();
-				mtime1 = millis();
-			}
-			*/
-			flag = false;
-			char str[80];
 
-			sprintf(str, "%d", decoder.getPosition(1));
-			lv_label_set_text(label_status, str);
-		}
-		
+		sprintf(str, "%d", decoder.getPosition(1));
+		lv_label_set_text(label_status, str);
+
 		int count_vfo = Encoder.getCount();
 		Encoder.clearCount();
 		if (count_vfo)
@@ -204,7 +172,7 @@ void guiTask(void* arg) {
 			}
 		}
 		
-		//guirx.checkButtons(decoder);
+		guirx.checkButtons(decoder);
 		xSemaphoreTake(GuiBinarySemaphore, portMAX_DELAY);
 		lv_timer_handler(); // let the GUI do its work 
 		xSemaphoreGive(GuiBinarySemaphore);
@@ -384,12 +352,6 @@ void init_gui() {
 	indev_drv.read_cb = my_touchpad_read;
 	lv_indev_drv_register(&indev_drv);
 
-	static lv_indev_drv_t indev_drv_enc;
-	lv_indev_drv_init(&indev_drv_enc);
-	indev_drv_enc.type = LV_INDEV_TYPE_ENCODER;
-	indev_drv_enc.read_cb = read_encoder;
-	encoder_indev_t = lv_indev_drv_register(&indev_drv_enc);
-
 	lv_theme_t* th = lv_theme_default_init(display, lv_palette_main(LV_PALETTE_BLUE), lv_palette_main(LV_PALETTE_CYAN), LV_THEME_DEFAULT_DARK, &lv_font_montserrat_14);
 	lv_disp_set_theme(display, th);
 	scr = lv_scr_act();
@@ -444,8 +406,8 @@ void init_gui() {
 	lv_obj_add_style(tab_buttons, &style_btn_tab, 0);
 	lv_obj_add_event_cb(tabview_tab, tabview_event_handler, LV_EVENT_VALUE_CHANGED, NULL);
 
-	button_group = lv_group_create();
-	lv_indev_set_group(encoder_indev_t, button_group);
+	//button_group = lv_group_create();
+	//lv_indev_set_group(encoder_indev_t, button_group);
 
 	guirx.init(tabview_tab, button_group);
 	mainTabSwr.init(tabview_tab, button_group);
@@ -453,11 +415,11 @@ void init_gui() {
 	
 	lv_obj_t* tab2 = lv_tabview_add_tab(tabview_tab, "Graph");
 	settings.init(tabview_tab, "Settings", button_group);
-	lv_group_add_obj(button_group, tab_buttons);
+	//lv_group_add_obj(button_group, tab_buttons);
 	lv_tabview_set_act(tabview_tab, 0, LV_ANIM_OFF);
 	CatInterface.begin();
 	//guirx.focus();
-	lv_group_focus_obj(tabview_tab);
+	//lv_group_focus_obj(tabview_tab);
 	xTaskCreate(guiTask,"gui",4096 * 4,NULL,2, &xHandle);
 	xTaskCreate(guiDecoder, "guiDecoder", 4096, NULL, 2, &dHandle);
 }

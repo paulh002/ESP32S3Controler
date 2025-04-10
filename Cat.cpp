@@ -58,7 +58,6 @@ void Cat::Setft(int ft)
 void Cat::Setag(int ag)
 {
 	int afgain = cat_message.GetAG(false) + ag;
-	//afgain += ag;
 	if (afgain < 0)
 		afgain = 0;
 	if (afgain > 255)
